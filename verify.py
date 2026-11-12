@@ -12,7 +12,7 @@ resources=subprocess.check_output([str(tools/'aapt'),'dump','resources',str(apk)
 assert 'club_launcher_foreground' in resources and 'club_navy' in resources, 'Native splash resources missing from compiled resource table'
 p=re.search(r"package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'",b)
 m=re.search(r"sdkVersion:'(\d+)'",b)
-assert p and m and p.group(1)=='live.sahyekfootball.app' and p.group(2)=='3' and p.group(3)=='1.0.2' and m.group(1)=='24'
+assert p and m and p.group(1)=='live.sahyekfootball.app' and p.group(2)=='4' and p.group(3)=='1.0.3' and m.group(1)=='24'
 assert "application-label:'SAHYEK F.C.'" in b
-meta=dict(packageId=p.group(1),version=p.group(3),versionCode=3,minSdk=24,sizeBytes=apk.stat().st_size,releasedAt=datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00','Z'),sha256=hashlib.sha256(apk.read_bytes()).hexdigest(),certificateSha256=cert.group(1).lower(),fileName=apk.name,signatureVerified=True)
+meta=dict(packageId=p.group(1),version=p.group(3),versionCode=4,minSdk=24,sizeBytes=apk.stat().st_size,releasedAt=datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00','Z'),sha256=hashlib.sha256(apk.read_bytes()).hexdigest(),certificateSha256=cert.group(1).lower(),fileName=apk.name,signatureVerified=True)
 (apk.parent/'android-release.json').write_text(json.dumps(meta,indent=2));print(json.dumps(meta))
