@@ -1,2 +1,2 @@
-# sahyek-android-releases
-Verified signed SAHYEK F.C. Android downloads and native-only release pipeline.
+# SAHYEK F.C. Android releases
+Native-only reproducible release pipeline. Main website source remains private. Signing identity is stored only as encrypted GitHub Actions secrets; do not delete these secrets. Downloads appear only after signed APK, package, archive, emulator install/launch and downloaded-byte checks succeed. Internet is required; iPhone installation remains a separate Safari Home Screen flow.
