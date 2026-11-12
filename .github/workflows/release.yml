@@ -44,6 +44,7 @@ jobs:
           npx cap sync android
           if [ -n "$FIREBASE_ANDROID_CONFIG" ]; then printf '%s' "$FIREBASE_ANDROID_CONFIG" > android/app/google-services.json; python3 validate-firebase.py; fi
           sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
+          sudo apt-get update -qq && sudo apt-get install -y tesseract-ocr
       - name: Build signed APK
         env:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -77,11 +78,15 @@ jobs:
             grep -q 'Status: ok' launch.txt
             for i in $(seq 1 30); do adb shell pidof live.sahyekfootball.app; sleep 1; done
             adb shell dumpsys activity activities > release/activity.txt
-            grep -q "live.sahyekfootball.app/.MainActivity" release/activity.txt
+            grep -q 'live.sahyekfootball.app/.MainActivity' release/activity.txt
             adb shell screencap -p /sdcard/launch.png
             adb pull /sdcard/launch.png release/emulator-launch.png
             adb shell uiautomator dump /sdcard/window.xml
             adb pull /sdcard/window.xml release/emulator-window.xml
+            adb shell input swipe 160 530 160 180 600
+            sleep 2
+            adb shell screencap -p /sdcard/scrolled.png
+            adb pull /sdcard/scrolled.png release/emulator-scrolled.png
             adb logcat -d -s Capacitor chromium AndroidRuntime > release/runtime-log.txt
             python3 verify-screen.py
       - name: Save verification evidence
@@ -93,7 +98,7 @@ jobs:
       - name: Publish checked bytes
         run: |
           set -euo pipefail
-          gh release create android-v1.0.2 --draft --title 'SAHYEK F.C. Android 1.0.2' --notes 'Native Capacitor account launch with canonical club-host navigation and version checks. Package, signing certificate, compiled splash and Android 15 WebView screen checked. Physical-device sign-in and native push remain unverified; Firebase Android configuration is pending.' release/*
+          gh release create android-v1.0.2 --draft --title 'SAHYEK F.C. Android 1.0.2' --notes 'Native Capacitor account launch with canonical club-host navigation and version checks. Package, signing certificate, compiled splash and rendered Android 15 account screen checked. Physical-device sign-in and native push remain unverified; Firebase Android configuration is pending.' release/*
           mkdir downloaded
           gh release download android-v1.0.2 --dir downloaded
           cmp release/sahyek-fc-1.0.2.apk downloaded/sahyek-fc-1.0.2.apk
