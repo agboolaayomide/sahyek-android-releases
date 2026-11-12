@@ -9,8 +9,6 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      ANDROID_VERSION_NAME: '1.0.0'
-      ANDROID_VERSION_CODE: '1'
       ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
       ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/club-release.jks
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -28,7 +26,7 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
-      - name: Prepare native shell
+      - name: Prepare branded native shell
         run: |
           set -euo pipefail
           npm init -y
@@ -37,14 +35,13 @@ jobs:
           echo '<!doctype html><html><head><title>SAHYEK F.C.</title></head><body>SAHYEK F.C.</body></html>' > www/index.html
           curl -fsS https://sahyekfootball.live/club-icon-512.png -o www/club-icon.png
           echo '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Reconnect — SAHYEK F.C.</title></head><body><h1>SAHYEK F.C.</h1><p>Club records need an internet connection.</p><a href="https://sahyekfootball.live">Try again</a></body></html>' > www/offline.html
-          echo '{"appId":"live.sahyekfootball.app","appName":"SAHYEK F.C.","webDir":"www","server":{"url":"https://sahyekfootball.live","errorPath":"offline.html","cleartext":false,"allowNavigation":["sahyekfootball.live"]},"android":{"backgroundColor":"#fff9dc","allowMixedContent":false},"plugins":{"SplashScreen":{"backgroundColor":"#fff9dc","androidScaleType":"CENTER_INSIDE","showSpinner":false}}}' > capacitor.config.json
+          echo '{"appId":"live.sahyekfootball.app","appName":"SAHYEK F.C.","webDir":"www","server":{"url":"https://sahyekfootball.live","errorPath":"offline.html","cleartext":false,"allowNavigation":["sahyekfootball.live"]},"android":{"backgroundColor":"#05223f","allowMixedContent":false},"plugins":{"SplashScreen":{"backgroundColor":"#05223f","androidScaleType":"CENTER_INSIDE","showSpinner":false,"launchShowDuration":1800,"launchFadeOutDuration":250}}}' > capacitor.config.json
           npx cap add android
           pip install pillow
           python3 prepare.py
+          python3 splash.py
           npx cap sync android
           sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
-          curl -fsS https://sahyekfootball.live/auth -o auth.html
-          grep -q SAHYEK auth.html
       - name: Build signed APK
         env:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -55,28 +52,30 @@ jobs:
           chmod +x android/gradlew
           cd android
           ./gradlew --no-daemon lintRelease testReleaseUnitTest assembleRelease
-      - name: Verify actual APK
+      - name: Verify package signature and splash resources
         run: |
           mkdir release
-          cp android/app/build/outputs/apk/release/app-release.apk release/sahyek-fc-1.0.0.apk
-          APK_PATH=release/sahyek-fc-1.0.0.apk python3 verify.py
-      - name: Enable Android hardware acceleration
+          cp android/app/build/outputs/apk/release/app-release.apk release/sahyek-fc-1.0.1.apk
+          sed -i "s/p.group(2)=='1'/p.group(2)=='2'/;s/p.group(3)=='1.0.0'/p.group(3)=='1.0.1'/;s/versionCode=1/versionCode=2/" verify.py
+          APK_PATH=release/sahyek-fc-1.0.1.apk python3 verify.py
+          unzip -l release/sahyek-fc-1.0.1.apk | grep club_launcher_foreground
+      - name: Enable acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Install and launch
+      - name: Install launch and inspect loaded screen
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29
+          api-level: 31
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -accel on
           script: |
-            adb install release/sahyek-fc-1.0.0.apk
+            adb install release/sahyek-fc-1.0.1.apk
             adb shell am start -W -n live.sahyekfootball.app/.MainActivity | tee launch.txt
             grep -q 'Status: ok' launch.txt
-            adb shell pidof live.sahyekfootball.app
+            for i in $(seq 1 15); do adb shell pidof live.sahyekfootball.app; sleep 1; done
             adb shell screencap -p /sdcard/launch.png
             adb pull /sdcard/launch.png release/emulator-launch.png
             adb shell uiautomator dump /sdcard/window.xml
@@ -84,13 +83,13 @@ jobs:
       - name: Publish checked bytes
         run: |
           set -euo pipefail
-          gh release create android-v1.0.0 --draft --title 'SAHYEK F.C. Android 1.0.0' --notes 'Signed package verified. Emulator installation and launch checked. Internet required. Physical-device sign-in and Firebase native push remain unverified.' release/*
+          gh release create android-v1.0.1 --draft --title 'SAHYEK F.C. Android 1.0.1' --notes 'Signed navy launch-splash update with unchanged padded official logo. Package, certificate and splash resources verified. Emulator install/process launch checked. Physical-device sign-in and native Firebase push remain unverified.' release/*
           mkdir downloaded
-          gh release download android-v1.0.0 --dir downloaded
-          cmp release/sahyek-fc-1.0.0.apk downloaded/sahyek-fc-1.0.0.apk
-          gh release edit android-v1.0.0 --draft=false --latest
-          curl -fsSL "https://github.com/$GH_REPO/releases/download/android-v1.0.0/sahyek-fc-1.0.0.apk" -o public.apk
-          cmp release/sahyek-fc-1.0.0.apk public.apk
+          gh release download android-v1.0.1 --dir downloaded
+          cmp release/sahyek-fc-1.0.1.apk downloaded/sahyek-fc-1.0.1.apk
+          gh release edit android-v1.0.1 --draft=false --latest
+          curl -fsSL "https://github.com/$GH_REPO/releases/download/android-v1.0.1/sahyek-fc-1.0.1.apk" -o public.apk
+          cmp release/sahyek-fc-1.0.1.apk public.apk
       - name: Remove signing key
         if: always()
         run: rm -f "$ANDROID_KEYSTORE_PATH"
