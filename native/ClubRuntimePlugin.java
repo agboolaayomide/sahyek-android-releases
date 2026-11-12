@@ -20,7 +20,7 @@ public class ClubRuntimePlugin extends Plugin {
         result.put("firebaseConfigured", !resource("google_app_id").isEmpty() && !sender.isEmpty() && "football-f4a74".equals(project));
         result.put("firebaseProject", project);
         result.put("senderId", sender);
-        android.content.pm.PackageInfo provider = WebView.getCurrentWebViewPackage();
+        android.content.pm.PackageInfo provider = android.os.Build.VERSION.SDK_INT >= 26 ? WebView.getCurrentWebViewPackage() : null;
         result.put("webViewVersion", provider == null ? "unavailable" : provider.versionName);
         call.resolve(result);
     }
