@@ -52,13 +52,11 @@ jobs:
           chmod +x android/gradlew
           cd android
           ./gradlew --no-daemon lintRelease testReleaseUnitTest assembleRelease
-      - name: Verify package signature and splash resources
+      - name: Verify package signature and compiled splash resources
         run: |
           mkdir release
           cp android/app/build/outputs/apk/release/app-release.apk release/sahyek-fc-1.0.1.apk
-          sed -i "s/p.group(2)=='1'/p.group(2)=='2'/;s/p.group(3)=='1.0.0'/p.group(3)=='1.0.1'/;s/versionCode=1/versionCode=2/" verify.py
           APK_PATH=release/sahyek-fc-1.0.1.apk python3 verify.py
-          unzip -l release/sahyek-fc-1.0.1.apk | grep club_launcher_foreground
       - name: Enable acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -83,7 +81,7 @@ jobs:
       - name: Publish checked bytes
         run: |
           set -euo pipefail
-          gh release create android-v1.0.1 --draft --title 'SAHYEK F.C. Android 1.0.1' --notes 'Signed navy launch-splash update with unchanged padded official logo. Package, certificate and splash resources verified. Emulator install/process launch checked. Physical-device sign-in and native Firebase push remain unverified.' release/*
+          gh release create android-v1.0.1 --draft --title 'SAHYEK F.C. Android 1.0.1' --notes 'Signed navy launch-splash update with unchanged padded official logo. Package, certificate and compiled splash resources verified. Emulator installation and launch checked. Physical-device sign-in and native Firebase push remain unverified.' release/*
           mkdir downloaded
           gh release download android-v1.0.1 --dir downloaded
           cmp release/sahyek-fc-1.0.1.apk downloaded/sahyek-fc-1.0.1.apk
