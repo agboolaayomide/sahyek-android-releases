@@ -77,6 +77,8 @@ jobs:
             adb shell am start -W -n live.sahyekfootball.app/.MainActivity | tee launch.txt
             grep -q 'Status: ok' launch.txt
             for i in $(seq 1 30); do adb shell pidof live.sahyekfootball.app; sleep 1; done
+            adb logcat -d -b crash > release/crash-log.txt || true
+            adb logcat -d -t 4000 > release/early-log.txt || true
             adb shell dumpsys activity activities > release/activity.txt
             grep -q 'live.sahyekfootball.app/.MainActivity' release/activity.txt
             adb shell screencap -p /sdcard/launch.png
