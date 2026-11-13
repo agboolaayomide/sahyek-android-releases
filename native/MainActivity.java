@@ -18,10 +18,10 @@ public class MainActivity extends BridgeActivity {
     private volatile boolean clubReady = false;
     @Override public void onCreate(Bundle savedInstanceState) {
         SplashScreen splash = SplashScreen.installSplashScreen(this);
-        splash.setKeepOnScreenCondition(() -> !clubReady);
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> clubReady = true, 6000);
         registerPlugin(ClubRuntimePlugin.class);
         super.onCreate(savedInstanceState);
+        splash.setKeepOnScreenCondition(() -> !clubReady);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView()).setAppearanceLightStatusBars(false);
         WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView()).setAppearanceLightNavigationBars(false);
