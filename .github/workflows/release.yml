@@ -101,6 +101,8 @@ jobs:
       - name: Publish checked bytes
         run: |
           set -euo pipefail
+          find release -type f -empty -delete
+          gh release delete android-v1.0.3 -y --cleanup-tag || true
           gh release create android-v1.0.3 --draft --title 'SAHYEK F.C. Android 1.0.3' --notes 'Native Capacitor account launch with canonical club-host navigation and version checks. Package, signing certificate, compiled splash and rendered Android 15 account screen checked. Physical-device sign-in and native push remain unverified; Firebase Android configuration included; real-device push display remains unverified.' release/*
           mkdir downloaded
           gh release download android-v1.0.3 --dir downloaded
